@@ -3,21 +3,7 @@ const { signToken, AuthenticationError } = require("../utils/auth");
 
 const resolvers = {
   Query: {
-    users: async () => {
-      return User.find();
-    },
-    user: async (parent, args, context, info) => {
-      const foundUser = await User.findOne({
-        $or: [{ _id: user ? user._id : params.id }, { username: params.username }],
-      });
-      if (!foundUser) {
-        return res.status(400).json({ message: 'Cannot find a user with this id!' });
-      }
-      return foundUser;
-    },
-    book: async (parent, { bookId }) => {
-      return Book.findOne({ _id: bookId });
-    },
+    // Returns a User type.
     me: async (parent, args, context) => {
       if (context.user) {
         return User.findOne({ _id: context.user._id });
@@ -27,11 +13,7 @@ const resolvers = {
   },
 
   Mutation: {
-    addUser: async (parent, { username, email, password }) => {
-      const user = await User.create({ username, email, password });
-      const token = signToken(user);
-      return { token, user };
-    },
+    // Accepts an email and password as parameters; returns an Auth type.
     login: async (parent, { email, password }) => {
       const user = await User.findOne({ email });
 
@@ -46,59 +28,36 @@ const resolvers = {
       }
 
       const token = signToken(user);
-
       return { token, user };
     },
-    addBook: async (parent, { bookText }, context) => {
-      if (context.user) {
-        const book = await Book.create({
-          bookText,
-          bookAuthor: context.user.username,
-        });
+    // Accepts a username, email, and password as parameters; returns an Auth type.
+    addUser: async (parent, { username, email, password }) => {
+      const user = await User.create({ username, email, password });
+      const token = signToken(user);
 
-        await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $addToSet: { savedBooks: book._id } }
-        );
+      return {token, user}
 
-        return book;
-      }
-      throw AuthenticationError;
     },
+    // Accepts a book author's array, description, title, bookId, image, and link as parameters; returns a User type.
+    saveBook: async (parent, { bookData }, context) => {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: context.user._id },
+        { $addToSet: { savedBooks: bookData } },
+        { new: true },
+
+        );
+        return updatedUser;
+    },
+    // Accepts a book's bookId as a parameter; returns a User type.
     removeBook: async (parent, { bookId }, context) => {
-      if (context.user) {
-        const book = await Book.findOneAndDelete({
-          _id: bookId,
-          bookAuthor: context.user.username,
-        });
-
-        await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $pull: { books: book._id } }
-        );
-
-        return book;
-      }
-      throw AuthenticationError;
-    },
-    removeComment: async (parent, { bookId, commentId }, context) => {
-      if (context.user) {
-        return Book.findOneAndUpdate(
-          { _id: bookId },
-          {
-            $pull: {
-              comments: {
-                _id: commentId,
-                commentAuthor: context.user.username,
-              },
-            },
-          },
-          { new: true }
-        );
-      }
-      throw AuthenticationError;
-    },
-  },
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: context.user._id },
+        { $pull: { savedBooks: { bookId: bookId } } },
+        { new: true }
+      );
+      return updatedUser;
+    }
+},
 };
 
 module.exports = resolvers;
