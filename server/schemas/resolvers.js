@@ -5,8 +5,10 @@ const resolvers = {
   Query: {
     // Returns a User type.
     me: async (parent, args, context) => {
-      if (context.user) {
-        return User.findOne({ _id: context.user._id });
+      const user = await User.findOne({ _id: context.user._id });
+      console.log(user);
+      if (user) {
+        return user;
       }
       throw AuthenticationError;
     },
@@ -35,18 +37,16 @@ const resolvers = {
       const user = await User.create({ username, email, password });
       const token = signToken(user);
 
-      return {token, user}
-
+      return { token, user };
     },
     // Accepts a book author's array, description, title, bookId, image, and link as parameters; returns a User type.
     saveBook: async (parent, { bookData }, context) => {
       const updatedUser = await User.findOneAndUpdate(
         { _id: context.user._id },
         { $addToSet: { savedBooks: bookData } },
-        { new: true },
-
-        );
-        return updatedUser;
+        { new: true }
+      );
+      return updatedUser;
     },
     // Accepts a book's bookId as a parameter; returns a User type.
     removeBook: async (parent, { bookId }, context) => {
@@ -56,8 +56,8 @@ const resolvers = {
         { new: true }
       );
       return updatedUser;
-    }
-},
+    },
+  },
 };
 
 module.exports = resolvers;
