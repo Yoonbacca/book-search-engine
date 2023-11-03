@@ -5,9 +5,8 @@ const resolvers = {
   Query: {
     // Returns a User type.
     me: async (parent, args, context) => {
-      const user = await User.findOne({ _id: context.user._id });
-      console.log(user);
-      if (user) {
+      if (context.user) {
+        const user = await User.findOne({ _id: context.user._id });
         return user;
       }
       throw AuthenticationError;
@@ -50,12 +49,17 @@ const resolvers = {
     },
     // Accepts a book's bookId as a parameter; returns a User type.
     removeBook: async (parent, { bookId }, context) => {
-      const updatedUser = await User.findOneAndUpdate(
-        { _id: context.user._id },
-        { $pull: { savedBooks: { bookId: bookId } } },
-        { new: true }
-      );
-      return updatedUser;
+      console.log("server/schema/resolvers.js/bookId ---> ", bookId);
+      if (context.user) {
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { savedBooks: { bookId: bookId } } },
+          { new: true }
+        );
+        
+        return updatedUser;
+      }
+      throw AuthenticationError;
     },
   },
 };

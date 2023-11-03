@@ -14,9 +14,10 @@ import Auth from '../utils/auth';
 import { removeBookId } from '../utils/localStorage';
 
 const SavedBooks = () => {
-  const [removeBook] = useMutation(REMOVE_BOOK);
-  const { loading, data: userData } = useQuery(GET_ME);
-
+  const [removeBook, {error}] = useMutation(REMOVE_BOOK);
+  const { loading, data } = useQuery(GET_ME);
+  const userData = data?.me || {};
+  // console.log("SavedBooks.jsx/removeBook/error",error)
   // if data isn't here yet, say so
   if (loading) {
     return <h2>LOADING...</h2>;
@@ -24,27 +25,27 @@ const SavedBooks = () => {
 
   const handleDeleteBook = async (bookId) => {
     const token = Auth.loggedIn() ? Auth.getToken() : null;
-
     if (!token) {
       return false;
     }
-
     try {
+      console.log("SavedBooks.jsx/handleDeleteBook/bookId -> ",bookId)
       const { data } = await removeBook({
         variables: { bookId }
       });
-
-      if (!data) {
-        throw new Error('something went wrong!');
-      }
+      console.log("SavedBooks.jsx/handleDeleteBook/data -> ", data)
+      // if (!data) {
+      //   throw new Error('something went wrong!');
+      // }
 
       // upon success, remove book's id from localStorage
       removeBookId(bookId);
     } catch (err) {
       console.error(err);
     }
+
   };
-  console.log(userData)
+
   return (
     <>
       <div fluid className="text-light bg-dark p-5">
@@ -54,12 +55,12 @@ const SavedBooks = () => {
       </div>
       <Container>
         <h2 className='pt-5'>
-          {userData.me.savedBooks.length
-            ? `Viewing ${userData.me.savedBooks.length} saved ${userData.me.savedBooks.length === 1 ? 'book' : 'books'}:`
+          {userData.savedBooks?.length
+            ? `Viewing ${userData.savedBooks.length} saved ${userData.savedBooks.length === 1 ? 'book' : 'books'}:`
             : 'You have no saved books!'}
         </h2>
         <Row>
-          {userData.me.savedBooks.map((book) => {
+          {userData.savedBooks?.map((book) => {
             return (
               <Col md="4">
                 <Card key={book.bookId} border='dark'>
