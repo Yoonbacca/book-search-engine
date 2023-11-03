@@ -6,7 +6,8 @@ const resolvers = {
     // Returns a User type.
     me: async (parent, args, context) => {
       if (context.user) {
-        return User.findOne({ _id: context.user._id });
+        const user = await User.findOne({ _id: context.user._id });
+        return user;
       }
       throw AuthenticationError;
     },
@@ -35,29 +36,32 @@ const resolvers = {
       const user = await User.create({ username, email, password });
       const token = signToken(user);
 
-      return {token, user}
-
+      return { token, user };
     },
     // Accepts a book author's array, description, title, bookId, image, and link as parameters; returns a User type.
     saveBook: async (parent, { bookData }, context) => {
       const updatedUser = await User.findOneAndUpdate(
         { _id: context.user._id },
         { $addToSet: { savedBooks: bookData } },
-        { new: true },
-
-        );
-        return updatedUser;
-    },
-    // Accepts a book's bookId as a parameter; returns a User type.
-    removeBook: async (parent, { bookId }, context) => {
-      const updatedUser = await User.findOneAndUpdate(
-        { _id: context.user._id },
-        { $pull: { savedBooks: { bookId: bookId } } },
         { new: true }
       );
       return updatedUser;
-    }
-},
+    },
+    // Accepts a book's bookId as a parameter; returns a User type.
+    removeBook: async (parent, { bookId }, context) => {
+      console.log("server/schema/resolvers.js/bookId ---> ", bookId);
+      if (context.user) {
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { savedBooks: { bookId: bookId } } },
+          { new: true }
+        );
+        
+        return updatedUser;
+      }
+      throw AuthenticationError;
+    },
+  },
 };
 
 module.exports = resolvers;

@@ -19,7 +19,6 @@ const typeDefs = `
     removeBook(bookId: String!): User
   }
 
-
   type User {
     _id: ID
     username: String
@@ -29,8 +28,9 @@ const typeDefs = `
   }
 
   type Book {
+    _id: ID
     bookId: String
-    authors: String
+    authors: [String]
     description: String
     title: String
     image: String
